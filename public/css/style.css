@@ -1,0 +1,887 @@
+/* =====================================================================
+   Atlantisz elveszett városa – a játék kinézete
+   Színek: tengerkék → mélykék → éjfekete víz, arany kiemelés, krémszínű szöveg.
+   Betűk: Cinzel = címek és a mélység-kijelző · Alegreya Sans = a felület ·
+          Cormorant Garamond = a nyitómondat (a „mesélő hang").
+   ===================================================================== */
+
+:root {
+  /* a víz színe a mélységgel változik (app.js állítja) */
+  --sea-top: rgb(58, 183, 217);
+  --sea-bottom: rgb(10, 42, 74);
+  --rays: 0.9;
+  --snow: 0;
+
+  /* állandó színek */
+  --ink: #f4efe0;
+  --ink-soft: rgba(244, 239, 224, 0.68);
+  --ink-faint: rgba(244, 239, 224, 0.42);
+  --gold: #d6a84a;
+  --gold-light: #f8e7a5;
+  --panel: rgba(3, 17, 33, 0.82);
+  --panel-solid: #061a30;
+  --line: rgba(244, 239, 224, 0.14);
+  --line-gold: rgba(214, 168, 74, 0.32);
+  --ok: #9ff0c0;
+  --bad: #ffab9c;
+  --danger: #b3261e;
+
+  /* betűk */
+  --font-display: 'Cinzel', 'Times New Roman', serif;
+  --font-ui: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-story: 'Cormorant Garamond', Georgia, serif;
+
+  /* lekerekítés rangsor szerint: nagy felület > vezérlő > címke */
+  --r-panel: 16px;
+  --r-control: 10px;
+  --r-tag: 6px;
+
+  /* görög meander (futó kulcsminta) egy 16 × 12-es csempén, arany vonallal */
+  --meander: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='14' viewBox='0 0 18 14'%3E%3Cpath d='M0 13.5H18M0 0.5H18M15.5 13.5V3.5H3.5V10.5H11.5V6.5H7.5' fill='none' stroke='%23d6a84a' stroke-width='1'/%3E%3C/svg%3E");
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation; /* nincs dupla koppintásos nagyítás */
+}
+
+html, body { margin: 0; }
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: var(--font-ui);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sea-top) 0%, var(--sea-bottom) 100%) fixed;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--gold-light); text-underline-offset: 3px; }
+
+:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+
+/* iOS nem nagyít rá a mezőre, ha legalább 16px a betű */
+input, select, textarea, button { font: inherit; font-size: 16px; }
+
+/* ===== Fény a víz alatt: csak a felszín közelében, a mélységgel elhalványul ===== */
+.rays {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: calc(var(--rays) * 0.6);
+  background: repeating-linear-gradient(100deg, rgba(255, 236, 170, 0.08) 0 70px, transparent 70px 170px);
+  -webkit-mask-image: linear-gradient(#000, transparent 70%);
+  mask-image: linear-gradient(#000, transparent 70%);
+}
+
+/* ===== Élő tenger (WebGL, js/ocean.js): ha fut, átveszi a CSS-fény és -hó helyét ===== */
+.ocean {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh; /* a címsor eltűnésekor sem méreteződik át */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.gl .ocean { opacity: 1; }
+.gl .rays,
+.gl .snow { display: none; }
+/* érintőképernyőn az élő háttér fölött nem mossuk el a kártya mögötti képet (minden képkockánál
+   újra kellene számolni): a kártya kicsit telítettebb, a látvány gyakorlatilag ugyanaz */
+@media (hover: none) {
+  .gl .card { -webkit-backdrop-filter: none; backdrop-filter: none; background: linear-gradient(180deg, rgba(10, 38, 66, 0.84), rgba(3, 17, 33, 0.92)); }
+}
+
+/* ===== Mélytengeri „hó": apró, lassan süllyedő részecskék, a mélységgel sűrűsödnek ===== */
+.snow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: calc(var(--snow) * 0.85);
+  background-image:
+    radial-gradient(1.2px 1.2px at 22px 34px, rgba(244, 239, 224, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 140px 110px, rgba(244, 239, 224, 0.4), transparent 60%),
+    radial-gradient(1.6px 1.6px at 80px 190px, rgba(248, 231, 165, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 190px 60px, rgba(244, 239, 224, 0.35), transparent 60%),
+    radial-gradient(1.3px 1.3px at 60px 260px, rgba(244, 239, 224, 0.3), transparent 60%);
+  background-size: 210px 290px, 260px 330px, 300px 380px, 230px 310px, 340px 420px;
+  animation: snowfall 90s linear infinite;
+}
+@keyframes snowfall {
+  to { background-position: 0 290px, -40px 330px, 30px 380px, -20px 310px, 50px 420px; }
+}
+
+/* ===== Mélységmérő: asztali gépen balra függőlegesen, telefonon fent vízszintesen ===== */
+.depth-meter {
+  position: fixed;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  height: 60vh;
+  width: 40px;
+}
+
+.depth-track {
+  position: relative;
+  flex: 1;
+  width: 14px;
+  background:
+    linear-gradient(var(--ink-faint), var(--gold) 60%, var(--gold-light)) center / 1px 100% no-repeat,
+    repeating-linear-gradient(180deg, rgba(244, 239, 224, 0.55) 0 1px, transparent 1px 25%) center / 14px 100% no-repeat,
+    repeating-linear-gradient(180deg, rgba(244, 239, 224, 0.28) 0 1px, transparent 1px 5%) center / 7px 100% no-repeat;
+}
+
+.depth-marker {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--d, 0) * 100%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--panel-solid);
+  background: var(--gold-light);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 10px rgba(248, 231, 165, 0.45);
+  transform: translate(-50%, -50%);
+  transition: top 1.2s ease, left 1.2s ease;
+}
+
+.depth-value {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--gold-light);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Nyitóképernyő ===== */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 32px 28px;
+  cursor: pointer;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 15%, #0b3360 0%, #03152b 55%, #010a16 100%);
+  transition: opacity 1.8s ease;
+}
+.splash.fade-out { opacity: 0; pointer-events: none; }
+/* élő háttér felett: sötétkék fátyol, amin átszűrődik a fény */
+.gl .splash {
+  background: radial-gradient(ellipse at 50% 15%, rgba(11, 51, 96, 0.62) 0%, rgba(3, 21, 43, 0.86) 55%, rgba(1, 10, 22, 0.94) 100%);
+}
+.gl .splash::before { display: none; }
+/* amíg a nyitóképernyő látszik, a mögötte lévő tartalom ne derengjen át az áttetsző fátylon */
+.gl body:has(> .splash:not(.fade-out)) > :is(.app, .site-footer, .depth-meter) { visibility: hidden; }
+
+/* vízszűrte napfény: lassan mozgó, halvány fényfoltok */
+.splash::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 240, 180, 0.16), transparent 28%),
+    radial-gradient(circle at 70% 60%, rgba(255, 240, 180, 0.11), transparent 24%),
+    radial-gradient(circle at 45% 80%, rgba(255, 240, 180, 0.08), transparent 22%);
+  background-size: 360px 360px;
+  mix-blend-mode: screen;
+  animation: caustic 18s linear infinite;
+  pointer-events: none;
+}
+@keyframes caustic { to { transform: translate(360px, 180px); } }
+
+.splash-inner {
+  position: relative;
+  display: grid;
+  gap: 1.4em;
+  max-width: 34rem;
+}
+
+.line {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-story);
+  font-style: italic;
+  font-size: clamp(1.45rem, 4.6vw, 2.1rem);
+  line-height: 1.42;
+  color: var(--gold-light);
+  opacity: 0;
+}
+.line-1 { animation: fade-in 3s ease 0.6s forwards; }
+.line-2 { animation: fade-in 3s ease 6s forwards; }
+.gold-text { color: var(--gold-light); }
+
+@keyframes fade-in {
+  from { opacity: 0; filter: blur(3px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+/* ===== Díszítés: meander-sáv (takarékosan: címek alatt, a nyitó- és célképernyőn) ===== */
+.ornament {
+  height: 14px;
+  margin: 0 0 18px;
+  background: var(--meander) left center / 18px 14px repeat-x;
+  opacity: 0.65;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.ornament.short { width: 162px; margin-left: auto; margin-right: auto; }
+.splash .ornament { width: 198px; margin: 0 auto; opacity: 0; animation: fade-in 2.4s ease 3.6s forwards; }
+
+/* ===== Elrendezés ===== */
+.app {
+  position: relative;
+  z-index: 2;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 24px 40px 96px;
+}
+
+h1 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.55rem, 4.4vw, 2rem);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--gold-light);
+}
+
+.lead, .intro {
+  margin: 0 0 22px;
+  max-width: 34rem;
+  color: var(--ink-soft);
+}
+.intro { font-style: italic; }
+
+/* ===== Csapat-sáv ===== */
+.teambar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 28px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+}
+.teaminfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  min-width: 0;
+  color: var(--ink-soft);
+}
+.team-name { color: var(--ink); font-weight: 700; }
+.team-code strong {
+  color: var(--gold-light);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/* ===== Állomás-fejléc: a mélység-kijelző a fő elem ===== */
+.station-head { margin-bottom: 24px; }
+.reading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.station-head .ornament { margin-bottom: 16px; }
+.reading-depth {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 11vw, 3.4rem);
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.unit { margin-left: 0.1em; font-family: var(--font-ui); font-size: 0.5em; font-weight: 500; color: var(--gold-light); }
+.reading-step { font-size: 15px; color: var(--ink-soft); text-align: right; }
+
+.instructions {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-left: 2px solid var(--gold);
+  background: rgba(3, 17, 33, 0.45);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+}
+
+/* ===== Felület-elemek ===== */
+.card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(10, 38, 66, 0.72), rgba(3, 17, 33, 0.84));
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  padding: 24px;
+  box-shadow: inset 0 1px 0 rgba(248, 231, 165, 0.14), 0 18px 40px rgba(0, 6, 14, 0.35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.subhead {
+  margin: 26px 0 10px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--ink);
+}
+.card > .subhead:first-of-type { margin-top: 4px; }
+
+.question {
+  margin: 0 0 18px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.counter {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: var(--gold-light);
+  font-variant-numeric: tabular-nums;
+}
+.riddle {
+  margin: 0 0 20px;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.hero {
+  display: block;
+  width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  margin: 0 0 18px;
+  border-radius: var(--r-control);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* ===== Gombok ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 12px 22px;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  color: #101820;
+  background: linear-gradient(180deg, #e2bd66, var(--gold) 55%, #c4953a);
+  box-shadow: inset 0 1px 0 rgba(255, 246, 214, 0.55), 0 1px 2px rgba(0, 0, 0, 0.3);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+/* kiemelés csak egeres eszközön: telefonon a megérintett elem nem marad kiemelve */
+@media (hover: hover) {
+  .btn:hover:not(:disabled) { background: linear-gradient(180deg, #f3d68a, #e2bd66 55%, var(--gold)); }
+  .btn.ghost:hover:not(:disabled) { background: rgba(214, 168, 74, 0.08); border-color: var(--gold); }
+  .btn.danger:hover:not(:disabled) { background: linear-gradient(180deg, #d8473d, #c0322a 60%, #a3251e); }
+  .btn.text:hover:not(:disabled) { color: var(--ink); background: none; }
+  .option:hover:not(:disabled) { border-color: var(--gold); background: rgba(214, 168, 74, 0.08); }
+  .option:hover:not(:disabled) .option-key { border-color: var(--gold); background: rgba(214, 168, 74, 0.14); }
+  .picker:hover { border-color: var(--gold); }
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn.ghost {
+  color: var(--gold-light);
+  background: transparent;
+  border-color: rgba(214, 168, 74, 0.6);
+  box-shadow: none;
+}
+
+.btn.danger {
+  color: #fff;
+  background: linear-gradient(180deg, #c83a31, var(--danger) 60%, #94201a);
+  box-shadow: inset 0 1px 0 rgba(255, 210, 200, 0.35), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.btn.small {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.btn.text {
+  min-height: 36px;
+  padding: 6px 2px;
+  border: 0;
+  box-shadow: none;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--ink-soft);
+  background: none;
+}
+
+/* ===== Választós feladat ===== */
+.options { display: grid; gap: 10px; }
+.option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 14px 18px;
+  border-radius: var(--r-control);
+  border: 1px solid rgba(244, 239, 224, 0.22);
+  background: rgba(244, 239, 224, 0.03);
+  cursor: pointer;
+  text-align: left;
+  font-size: 18px;
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.option:active:not(:disabled) { transform: translateY(1px); }
+.option:disabled { opacity: 0.5; }
+.option-key {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line-gold);
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1;
+  padding-bottom: 2px;
+  color: var(--gold-light);
+}
+
+/* ===== Szöveges válasz ===== */
+.answer { display: flex; flex-wrap: wrap; gap: 10px; }
+.answer input {
+  flex: 1 1 220px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 12px 16px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(244, 239, 224, 0.24);
+  border-radius: var(--r-control);
+}
+.answer input::placeholder { color: var(--ink-faint); }
+.answer input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(214, 168, 74, 0.2); }
+
+.feedback {
+  min-height: 1.5em;
+  margin: 16px 2px 0;
+  font-size: 17px;
+}
+.feedback.ok { color: var(--ok); }
+.feedback.bad { color: var(--bad); }
+
+.hint {
+  margin: 14px 0 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+/* ===== Régi üzenet: kőtábla-felirat ===== */
+.scroll {
+  position: relative;
+  margin: 0 0 18px;
+  padding: 26px 20px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 2;
+  letter-spacing: 0.14em;
+  text-align: center;
+  word-break: break-word;
+  color: var(--ink-soft);
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(244, 239, 224, 0.05), transparent 60%),
+    linear-gradient(180deg, rgba(20, 34, 48, 0.9), rgba(8, 18, 30, 0.95));
+  border: 1px solid rgba(244, 239, 224, 0.2);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 5px rgba(8, 18, 30, 0.9), inset 0 0 0 6px rgba(214, 168, 74, 0.3), inset 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+.scroll mark {
+  color: var(--gold-light);
+  background: none;
+  border-bottom: 2px solid var(--gold);
+}
+/* hosszabb, elbeszélő üzenet: olvasható betű, bekezdések, az első sor a címe */
+.scroll.long {
+  padding: 24px 22px;
+  font-family: var(--font-story);
+  font-size: 1.2rem;
+  line-height: 1.6;
+  letter-spacing: 0;
+  text-align: left;
+  white-space: pre-line;
+  hyphens: auto;
+}
+.scroll.long::first-line {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  color: var(--gold-light);
+}
+.scroll.long mark {
+  font-weight: 700;
+  color: var(--gold-light);
+  border-bottom-width: 1px;
+  text-shadow: 0 0 10px rgba(214, 168, 74, 0.45);
+}
+
+/* ===== Szobor-fotó ===== */
+.refs {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin: 0 0 18px;
+  padding-bottom: 6px;
+}
+.refs figure { flex: 0 0 auto; width: min-content; margin: 0; }
+.refs img { display: block; height: 140px; border-radius: var(--r-control); }
+.refs figcaption { margin-top: 6px; font-size: 0.85rem; text-align: center; color: var(--ink-soft); }
+
+.picker {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  margin: 0 0 16px;
+  padding: 22px 16px;
+  text-align: center;
+  cursor: pointer;
+  border: 1px dashed rgba(244, 239, 224, 0.3);
+  border-radius: var(--r-control);
+}
+.picker:focus-within { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.picker-btn { font-weight: 700; color: var(--gold-light); }
+.picker-note { font-size: 15px; color: var(--ink-soft); }
+
+/* a valódi fájlválasztó rejtve, de billentyűzettel és felolvasóval elérhető marad */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0 0 14px;
+  font-size: 15.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.check input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--gold);
+}
+.check em { color: var(--ink); font-style: normal; font-weight: 500; }
+.upload > .btn { width: 100%; margin-top: 4px; }
+
+/* ===== Cápa-kör ===== */
+.shark-ring {
+  position: relative;
+  width: min(250px, 72vw);
+  aspect-ratio: 1;
+  margin: 4px auto 16px;
+}
+.shark-ring svg { display: block; width: 100%; height: 100%; transition: filter 0.15s ease; }
+.ring-red { fill: none; stroke: #5c1a1a; stroke-width: 26; }
+.ring-green { fill: none; stroke: #7dffa0; stroke-width: 26; }
+.ring-ticks { fill: none; stroke: #0b1e33; stroke-width: 26; opacity: 0.55; }
+.ring-dial { fill: none; stroke: rgba(244, 239, 224, 0.22); stroke-width: 6; }
+.ring-dial.major { stroke: rgba(248, 231, 165, 0.5); stroke-width: 10; }
+.ring-hub { fill: none; stroke: rgba(214, 168, 74, 0.25); stroke-width: 1; }
+.shark-ring.in-zone svg { filter: drop-shadow(0 0 10px rgba(125, 255, 160, 0.6)); }
+
+.shark {
+  position: absolute;
+  width: 46px;
+  height: 20px;
+  color: var(--ink);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  will-change: transform;
+}
+.shark svg { display: block; width: 100%; height: 100%; }
+
+.shark-legend {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: 0 0 18px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+.key {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border-radius: 3px;
+  vertical-align: -2px;
+}
+.key-green { background: repeating-linear-gradient(90deg, #7dffa0 0 3px, #0b1e33 3px 6px); }
+.key-red { background: #5c1a1a; border: 1px solid #b3261e; }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+/* ===== Segítség ===== */
+.hintbox { margin: 16px 0 0; }
+.hint-wait { margin: 0; font-size: 15px; color: var(--ink-faint); }
+.hint-text {
+  margin: 0;
+  padding: 14px 16px;
+  border-left: 2px solid var(--gold);
+  background: rgba(214, 168, 74, 0.09);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+}
+.hint-text strong { color: var(--gold-light); }
+
+/* ===== Merülés két állomás között: a játék egyetlen nagy mozdulata ===== */
+.dive {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(1, 10, 22, 0) 0%, rgba(1, 10, 22, 0.82) 50%, rgba(1, 10, 22, 0) 100%);
+  animation: dive-in 0.25s ease both;
+  transition: opacity 0.5s ease;
+}
+.dive-out { opacity: 0; }
+.dive-streaks {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(180deg, transparent, rgba(244, 239, 224, 0.16) 50%, transparent);
+  background-size: 2px 90px;
+  background-repeat: repeat;
+  -webkit-mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent);
+  mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent);
+  opacity: 0.35;
+  animation: rise-fast 0.5s linear infinite;
+}
+.dive-inner { position: relative; text-align: center; }
+.dive-label { margin: 0; font-size: 15px; color: var(--ink-soft); }
+.dive-depth {
+  margin: 0.05em 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(3rem, 14vw, 4.8rem);
+  color: var(--gold-light);
+  font-variant-numeric: tabular-nums;
+}
+.dive-lite .dive-streaks { display: none; }
+@keyframes dive-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise-fast { from { background-position: 0 0; } to { background-position: 0 -90px; } }
+
+/* ===== Cél: Atlantisz ===== */
+.finale { padding-top: 12px; }
+.temple {
+  display: block;
+  width: min(220px, 60vw);
+  margin: 6px auto 10px;
+  color: var(--gold-light);
+  opacity: 0;
+  animation: fade-in 2.4s ease 0.3s forwards;
+}
+.finale-title {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: clamp(2.6rem, 12vw, 3.8rem);
+  letter-spacing: 0.04em;
+}
+.finale .lead { margin: 0 auto 26px; text-align: center; }
+
+.result {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 0 10px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line-gold);
+  border-bottom: 1px solid var(--line-gold);
+}
+.result-item { display: grid; gap: 4px; padding: 0 10px; text-align: center; }
+.result-item + .result-item { border-left: 1px solid var(--line); }
+.result-value {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  line-height: 1.1;
+  color: var(--gold-light);
+  font-variant-numeric: tabular-nums;
+}
+.result-label { font-size: 14px; line-height: 1.3; color: var(--ink-soft); }
+
+.finale .subhead { margin-top: 30px; }
+
+.live-board {
+  list-style: none;
+  margin: 6px 0 4px;
+  padding: 0;
+}
+.live-board li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.live-board li.me {
+  margin: 0 -1px;
+  border: 1px solid var(--gold);
+  border-radius: var(--r-control);
+  background: rgba(214, 168, 74, 0.08);
+}
+.live-board .lb-pos { color: var(--gold-light); font-variant-numeric: tabular-nums; }
+.live-board .lb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-board .lb-name em { color: var(--gold-light); font-style: normal; font-size: 15px; }
+.live-board .lb-val { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.live-board li.done .lb-val { color: var(--ink); }
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 8px 0;
+}
+.photo-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--r-control);
+}
+
+.finale > .btn { width: 100%; margin-top: 26px; }
+
+/* ===== Lábléc ===== */
+.site-footer {
+  position: relative;
+  z-index: 2;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px 24px calc(28px + env(safe-area-inset-bottom, 0px)) 96px;
+  font-size: 14px;
+  color: var(--ink-faint);
+}
+.site-footer p { margin: 0 0 4px; }
+.site-footer a { color: var(--ink-soft); }
+
+/* ===== Telefon ===== */
+@media (max-width: 640px) {
+  .depth-meter {
+    top: env(safe-area-inset-top, 0px);
+    left: 0;
+    right: 0;
+    transform: none;
+    height: auto;
+    width: auto;
+    flex-direction: row;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(3, 17, 33, 0.94);
+    border-bottom: 1px solid var(--line);
+  }
+  .depth-track {
+    flex: 1;
+    width: auto;
+    height: 14px;
+    background:
+      linear-gradient(90deg, var(--ink-faint), var(--gold) 60%, var(--gold-light)) center / 100% 1px no-repeat,
+      repeating-linear-gradient(90deg, rgba(244, 239, 224, 0.55) 0 1px, transparent 1px 25%) center / 100% 14px no-repeat,
+      repeating-linear-gradient(90deg, rgba(244, 239, 224, 0.28) 0 1px, transparent 1px 5%) center / 100% 7px no-repeat;
+  }
+  .depth-marker { top: 50%; left: calc(var(--d, 0) * 100%); }
+  .depth-value { min-width: 3.6em; text-align: right; }
+
+  .app { padding: 72px 16px 32px; }
+  .site-footer { padding-left: 16px; padding-right: 16px; }
+  .card { padding: 18px; }
+  .teambar { margin-bottom: 22px; }
+
+  .answer { flex-direction: column; }
+  .answer input, .answer .btn { width: 100%; flex: none; }
+  .actions { flex-direction: column; align-items: stretch; }
+  .actions .btn { width: 100%; }
+
+  .scroll { font-size: 1.05rem; letter-spacing: 0.08em; padding: 16px 12px; }
+  .scroll.long { font-size: 1.12rem; letter-spacing: 0; padding: 18px 16px; }
+  .refs img { height: 110px; }
+  .result-value { font-size: 1.4rem; }
+}
+
+/* ===== Gyenge eszköz vagy hálózat: könnyű mód ===== */
+.lite .rays,
+.lite .snow,
+.lite .splash::before { display: none; }
+.lite .card { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--panel-solid); }
+.lite .temple, .lite .splash .ornament { animation: none; opacity: 1; }
+.lite .line { animation: none; opacity: 1; filter: none; }
+.lite .splash { transition-duration: 0.6s; }
+.lite .depth-marker { transition: none; }
+.lite .btn, .lite .option { transition: none; }
+
+/* ===== Csökkentett mozgás ===== */
+@media (prefers-reduced-motion: reduce) {
+  .splash::before, .line, .dive, .dive-streaks, .snow, .temple, .splash .ornament { animation: none !important; }
+  .line, .temple, .splash .ornament { opacity: 1; filter: none; }
+  .depth-marker, .btn, .option { transition: none; }
+}
+
+/* ===== Játékidő: zárás előtti figyelmeztetés, lezárt játék, eredményhirdetés ===== */
+.closing {
+  margin: 10px 0 0;
+  font-weight: 500;
+  color: var(--gold-light);
+}
+.note {
+  margin: 14px auto 0;
+  max-width: 34ch;
+  padding: 10px 14px;
+  font-weight: 500;
+  color: var(--gold-light);
+  border: 1px solid rgba(214, 168, 74, 0.45);
+  border-radius: 10px;
+  background: rgba(214, 168, 74, 0.08);
+}

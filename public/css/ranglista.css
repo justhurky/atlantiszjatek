@@ -1,0 +1,122 @@
+/* Kivetítőre tervezett ranglista: nagy betűk, erős kontraszt, a mélység a fő vizuális elem */
+:root {
+  --ink: #f4efe0;
+  --soft: rgba(244, 239, 224, 0.65);
+  --gold: #d6a84a;
+  --gold-light: #f8e7a5;
+  --line: rgba(214, 168, 74, 0.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--ink);
+  font-family: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* a felső világos víz lefelé egyre sötétebb: a ranglista is „mélyül" */
+  background: linear-gradient(180deg, #0f4a7a 0%, #062844 35%, #021428 70%, #010a16 100%) fixed;
+}
+.ocean {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.gl .ocean { opacity: 1; }
+.board {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 40px) clamp(16px, 4vw, 56px);
+}
+.board-head { text-align: center; margin-bottom: clamp(16px, 3vh, 36px); }
+.kicker {
+  margin: 0;
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+  color: var(--soft);
+}
+h1 {
+  margin: 0.2em 0 0;
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  font-weight: 500;
+  font-size: clamp(1.8rem, 5vw, 4rem);
+  color: var(--gold-light);
+}
+.rows { display: grid; gap: clamp(8px, 1.2vh, 14px); }
+.row {
+  display: grid;
+  grid-template-columns: clamp(44px, 5vw, 80px) minmax(0, 1.2fr) minmax(0, 2fr) clamp(110px, 14vw, 220px);
+  align-items: center;
+  gap: clamp(10px, 1.6vw, 24px);
+  padding: clamp(10px, 1.4vh, 16px) clamp(12px, 1.6vw, 24px);
+  border-radius: 10px;
+  background: rgba(3, 17, 33, 0.72);
+  border: 1px solid rgba(244, 239, 224, 0.12);
+  border-left: 4px solid transparent;
+}
+.row.done { border-left-color: var(--gold); background: rgba(3, 17, 33, 0.88); }
+.pos {
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  font-size: clamp(1.4rem, 3vw, 2.6rem);
+  color: var(--gold-light);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.pos.playing { color: var(--soft); font-size: clamp(1rem, 2vw, 1.6rem); }
+.name {
+  font-weight: 700;
+  font-size: clamp(1.2rem, 2.6vw, 2.2rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gauge { position: relative; height: clamp(6px, 0.9vh, 10px); border-radius: 3px; background: rgba(255, 255, 255, 0.08); }
+.gauge .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #3ab7d9, #0a2a4a 60%, var(--gold));
+  transition: width 1.2s ease;
+}
+.gauge .label {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  font-size: clamp(0.8rem, 1.2vw, 1.05rem);
+  color: var(--soft);
+  white-space: nowrap;
+}
+.right {
+  text-align: right;
+  font-weight: 500;
+  font-size: clamp(1.1rem, 2.2vw, 1.9rem);
+  font-variant-numeric: tabular-nums;
+}
+.right.time { color: var(--gold-light); }
+.right.depth { color: var(--soft); }
+.empty, .more, .board-foot { text-align: center; color: var(--soft); font-size: clamp(1rem, 1.8vw, 1.4rem); }
+.board-foot { margin-top: 24px; font-size: 0.95rem; }
+
+@media (max-width: 720px) {
+  .row { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .row .gauge { grid-column: 2 / -1; grid-row: 2; margin-bottom: 18px; }
+}
+.note {
+  display: inline-block;
+  margin: 14px 0 0;
+  padding: 8px 18px;
+  font-size: clamp(1rem, 1.8vw, 1.5rem);
+  font-weight: 500;
+  color: var(--gold-light);
+  border: 1px solid rgba(214, 168, 74, 0.5);
+  border-radius: 10px;
+  background: rgba(3, 17, 33, 0.6);
+}
+.note[hidden] { display: none; }

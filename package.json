@@ -1,0 +1,28 @@
+{
+  "name": "atlantisz-jatek",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Atlantisz elveszett városa – mélységi kalandjáték QR-kapuval",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "qr": "node scripts/make-qr.js",
+    "clean:uploads": "node scripts/clean-uploads.js",
+    "test": "node --test tests/unit.test.js tests/server.test.js tests/extra.test.js tests/security.test.js tests/admin.test.js tests/features.test.js tests/live.test.js tests/e2e.test.js",
+    "test:server": "node --test tests/unit.test.js tests/server.test.js tests/extra.test.js tests/security.test.js tests/admin.test.js tests/features.test.js tests/live.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "compression": "^1.8.2",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "multer": "^2.0.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}

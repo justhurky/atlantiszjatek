@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Atlantisz – Merülési ranglista</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/css/ranglista.css">
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <p class="kicker">Atlantisz elveszett városa</p>
+      <h1>Merülési ranglista</h1>
+      <p id="note" class="note" hidden></p>
+    </header>
+    <section id="rows" class="rows" aria-live="polite"></section>
+    <p id="more" class="more" hidden></p>
+    <footer class="board-foot"><span id="updated"></span></footer>
+  </main>
+  <script src="/js/ranglista.js" defer></script>
+  <script type="module" src="/js/ranglista-bg.js"></script>
+</body>
+</html>

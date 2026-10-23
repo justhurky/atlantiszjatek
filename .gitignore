@@ -1,0 +1,31 @@
+# függőségek és generált fájlok
+node_modules/
+uploads/
+public/assets/qr-kapu.png
+public/assets/qr-jatek.png
+public/assets/qr-jatek.svg
+
+# titkok (soha ne kerüljön git-be)
+.env
+.env.*
+!.env.example
+
+# naplók, IDE-fájlok
+*.log
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# mentett játékállapot
+data/
+
+# a projekt mappájában tartott, de a repóba nem való fájlok
+/*.zip
+/*.mp4
+/*.pdf
+/*.jpg
+/ESK_*.png
+/IVK_*.png
+/valaszok a kerdesekre/
+/karestely-beallitasok.txt

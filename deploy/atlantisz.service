@@ -1,0 +1,19 @@
+# systemd szolgáltatás: a játék a gép indulásakor elindul, és leállás esetén újraindul.
+# Telepítés: sudo cp deploy/atlantisz.service /etc/systemd/system/
+#            sudo systemctl daemon-reload && sudo systemctl enable --now atlantisz
+# Napló:     journalctl -u atlantisz -f   (itt látszik a szervezői link és a kapukód is)
+[Unit]
+Description=Atlantisz jatek (ESK-IVK Karestely)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/atlantiszjatek
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=3
+# a beállítások a /opt/atlantiszjatek/.env fájlban vannak
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+# A játék beállításai a SZERVEREN (eskivk.grafibee.hu).
+# Ezt a fájlt a szerveren a projekt mappájába kell tenni, .env néven.
+
+NODE_ENV=production
+BASE_URL=https://eskivk.grafibee.hu
+# a szerver HTTPS-proxy (nginx / a tárhely webszervere) mögött fut
+TRUST_PROXY=1
+PORT=3000
+# csak a gépen belülről (az nginx felől) legyen elérhető a játék portja
+HOST=127.0.0.1
+
+GAME_END_AT=2026-10-27 22:00
+TIME_ZONE=Europe/Budapest
+RESULTS_NOTE=Eredményhirdetés 23:00 után, értékes nyereményekkel!
+
+PRIVACY_EVENT=ESK – IVK Karestély, 2026. október 27., Széchenyi Étterem
+# PRIVACY_CONTROLLER=
+# PRIVACY_CONTACT=
+# PRIVACY_HOSTING=
+
+# A titkokat (SESSION_SECRET, GATE_QR_SECRET, GATE_CODE) és a szervezői kulcsot az első indításkor
+# a szerver generálja a data mappába. A data mappa maradjon meg a frissítések között!
