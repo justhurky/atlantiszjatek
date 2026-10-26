@@ -14,9 +14,11 @@ TIME_ZONE=Europe/Budapest
 RESULTS_NOTE=Eredményhirdetés 23:00 után, értékes nyereményekkel!
 
 PRIVACY_EVENT=ESK – IVK Karestély, 2026. október 27., Széchenyi Étterem
-# PRIVACY_CONTROLLER=
-# PRIVACY_CONTACT=
-# PRIVACY_HOSTING=
+PRIVACY_CONTROLLER=Széchenyi István Egyetem Hallgatói Önkormányzata – ESK HÖK és IVK HÖK, 9026 Győr, Egyetem tér 1.
+PRIVACY_CONTACT=esk.hok@sze.hu
+PRIVACY_DPO=Dr. Pőcze Péter László (Széchenyi István Egyetem adatvédelmi tisztviselője), adatvedelem@sze.hu
+PRIVACY_HOSTING=DigitalOcean, LLC – a szerver az Európai Unióban, Frankfurtban (Németország) működik
+PRIVACY_UPDATED=2026. október 26.
 
 # A titkokat (SESSION_SECRET, GATE_QR_SECRET) és a szervezői kulcsot az első indításkor
 # a szerver generálja a data mappába. A data mappa maradjon meg a frissítések között!
