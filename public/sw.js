@@ -3,7 +3,7 @@
 // Offline tartalék a játék felületéhez. Mindig a hálózat az első: így egy frissítés után azonnal
 // az új felület és kód töltődik be. A tárolt példányt csak akkor használjuk, ha a hálózat nem
 // válaszol (gyenge térerő, kiesés). Az /api, a kapu és a szervezői oldalak sosem tárolódnak.
-const CACHE = 'atlantis-v7';
+const CACHE = 'atlantis-v8';
 const SHELL = ['/', '/index.html', '/css/style.css', '/js/app.js', '/js/ocean.js', '/fonts/fonts.css'];
 const NETWORK_TIMEOUT_MS = 4000;
 
@@ -29,7 +29,10 @@ self.addEventListener('activate', (event) => {
 function fromNetwork(request) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('timeout')), NETWORK_TIMEOUT_MS);
-    fetch(request).then(
+    // a kódot és a stílust a böngésző saját gyorsítótára helyett mindig a szervertől kérjük
+    // (egy régi, órákig tárolt példány különben elfedné a javításokat)
+    const fresh = request.destination === 'script' || request.destination === 'style';
+    fetch(fresh ? new Request(request, { cache: 'no-cache' }) : request).then(
       (res) => {
         clearTimeout(timer);
         resolve(res);

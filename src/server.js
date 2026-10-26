@@ -153,7 +153,9 @@ app.use(
   express.static(PUBLIC_DIR, {
     maxAge: '1h',
     setHeaders(res, filePath) {
-      if (filePath.endsWith('sw.js') || filePath.endsWith('.html')) {
+      // A kód és a stílus mindig újraellenőrzött (ETag, változatlannál pici 304-es válasz): így egy
+      // javítás a következő frissítéskor azonnal megjelenik a telefonokon, nem csak egy óra múlva.
+      if (/\.(html|js|css)$/.test(filePath)) {
         res.setHeader('Cache-Control', 'no-cache');
       }
       if (filePath.endsWith('.woff2')) {

@@ -509,6 +509,9 @@ describe('hibakezelés és hálózati esetek', () => {
   test('sw.js és index.html nem gyorsítótárazódik hosszan (no-cache)', async () => {
     assert.equal((await newClient().get('/sw.js')).headers.get('cache-control'), 'no-cache');
     assert.equal((await newClient().get('/index.html')).headers.get('cache-control'), 'no-cache');
+    // a javítások azonnal jussanak el a telefonokra (nem 1 óra tárolás után)
+    assert.equal((await newClient().get('/js/app.js')).headers.get('cache-control'), 'no-cache');
+    assert.equal((await newClient().get('/css/style.css')).headers.get('cache-control'), 'no-cache');
   });
 
   test('a szöveges válaszok gzip-pel mennek (lassú hálózat)', async () => {
