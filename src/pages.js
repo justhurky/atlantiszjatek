@@ -68,6 +68,7 @@ function gatePage(kind, data = {}) {
     code: `<h1>Atlantisz kapuja</h1>
       <p>Ha nem ebben a böngészőben játszotok, írjátok be ezt a kódot a játékba:</p>
       <p class="code">${esc(data.code)}</p>
+      <p class="soft">A kód csak a ti csapatotoké: egyszer használható, és ${esc(data.minutes)} percig érvényes. Ha lejárt, olvassátok be újra a QR-kódot.</p>
       <p class="soft">Tipp: ha a játékot futtató böngészővel olvassátok be a QR-kódot, a kapu magától kinyílik.</p>`,
   };
   return layout('Atlantisz kapuja', `<div>${bodies[kind] || bodies.closed}</div>`, { center: true });

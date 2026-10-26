@@ -454,10 +454,11 @@ describe('fotó-feltöltés', () => {
 });
 
 describe('QR-kapu oldal', () => {
-  test('helyes titok: megmutatja a kódot, no-store fejléccel', async () => {
+  test('helyes titok: egyszer használható kódot mutat (a tartalék kódot nem), no-store fejléccel', async () => {
     const r = await newClient().get('/kapu/teszt-kapu');
     assert.equal(r.status, 200);
-    assert.match(r.text, new RegExp(GATE));
+    assert.match(r.text, /<p class="code">[A-Z0-9]{6}<\/p>/);
+    assert.equal(r.text.includes(GATE), false);
     assert.equal(r.headers.get('cache-control'), 'no-store');
   });
 

@@ -54,7 +54,11 @@ if (config.GENERATED_SECRETS.length) {
       'Újraindítás után is ugyanazok maradnak.'
   );
 }
-console.log(`A kapukód (ezt mutatja a kapu oldala): ${config.GATE_CODE}`);
+console.log(
+  config.GATE_CODE
+    ? `Tartalék kapukód (GATE_CODE, mindig érvényes – ne add ki!): ${config.GATE_CODE}`
+    : `A kapu minden beolvasáskor egyszer használható, ${config.GATE_CODE_TTL_MIN} percig érvényes kódot ad.`
+);
 if (config.BASE_URL_AUTO) {
   console.log(
     `A játék címe a telefonokról (automatikusan felismerve): ${config.BASE_URL}` +
@@ -620,6 +624,33 @@ app.post('/api/team/leave', (req, res) => {
 
 // ---------- feladatok ----------
 
+// ---------- a kapu egyszer használható kódjai ----------
+// Ha a kapu QR-kódját nem a játék böngészője nyitja meg, a kapu oldala egy friss kódot mutat. Minden
+// beolvasás új kódot ad, egy kód csak egyszer és csak rövid ideig érvényes: így egy csapat nem tudja
+// egyszerűen bemondani a többieknek – a kaput nekik is meg kell találniuk.
+const gateCodes = new Map(); // kód -> lejárat
+const GATE_CODE_LEN = 6;
+function issueGateCode() {
+  const now = Date.now();
+  if (gateCodes.size > 2000) {
+    for (const [c, exp] of gateCodes) if (exp < now) gateCodes.delete(c);
+    while (gateCodes.size > 2000) gateCodes.delete(gateCodes.keys().next().value);
+  }
+  let code;
+  do {
+    code = Array.from({ length: GATE_CODE_LEN }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join('');
+  } while (gateCodes.has(code));
+  gateCodes.set(code, now + config.GATE_CODE_TTL_MIN * 60 * 1000);
+  return code;
+}
+function consumeGateCode(value) {
+  const code = String(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const exp = gateCodes.get(code);
+  if (!exp) return false;
+  gateCodes.delete(code);
+  return exp >= Date.now();
+}
+
 // Szöveges / választós / rejtvényes feladatok
 app.post('/api/game/answer', answerLimit, gameOpen, (req, res) => {
   const team = requireTeam(req, res);
@@ -631,13 +662,19 @@ app.post('/api/game/answer', answerLimit, gameOpen, (req, res) => {
     return res.status(400).json({ error: 'Ehhez a feladathoz most nem szöveges válasz kell.' });
   }
 
-  const expected = stage.type === 'riddles' ? stage.riddles[team.riddleIndex].a : stage.answer;
-  if (expected == null) {
-    return res.status(503).json({ error: 'Ez a feladat még nincs beállítva – szóljatok a szervezőnek!' });
-  }
-
   const value = String(req.body?.value ?? '').slice(0, 100);
-  if (!sameAnswer(value, expected)) {
+  let correct;
+  if (stage.type === 'gate') {
+    // a kapu egyszer használható kódja (vagy a kifejezetten megadott tartalék kód)
+    correct = consumeGateCode(value) || Boolean(config.GATE_CODE && sameAnswer(value, config.GATE_CODE));
+  } else {
+    const expected = stage.type === 'riddles' ? stage.riddles[team.riddleIndex].a : stage.answer;
+    if (expected == null) {
+      return res.status(503).json({ error: 'Ez a feladat még nincs beállítva – szóljatok a szervezőnek!' });
+    }
+    correct = sameAnswer(value, expected);
+  }
+  if (!correct) {
     registerWrong(team);
     return res.json({
       correct: false,
@@ -845,7 +882,7 @@ app.get('/kapu/:secret', (req, res) => {
     return res.type('html').send(gatePage('closed'));
   }
   const team = currentTeam(req);
-  if (!team) return res.type('html').send(gatePage('code', { code: config.GATE_CODE }));
+  if (!team) return res.type('html').send(gatePage('code', { code: issueGateCode(), minutes: config.GATE_CODE_TTL_MIN }));
   if (team.finished) return res.type('html').send(gatePage('finished', { name: team.name }));
   if (gameEnded()) return res.type('html').send(gatePage('ended', { name: team.name, message: endMessage() }));
   if (team.stageIndex < GATE_INDEX) {
@@ -1066,9 +1103,9 @@ function configStatus() {
     {
       ok: true,
       label: 'Saját titkok és kapukód',
-      detail: config.GENERATED_SECRETS.length
-        ? `A szerver generálta őket (${config.GENERATED_SECRETS.join(', ')}), a data mappában vannak. A kapukódot indításkor a konzol írja ki.`
-        : 'Megadva.',
+      detail: `${config.GENERATED_SECRETS.length ? `A szerver generálta őket (${config.GENERATED_SECRETS.join(', ')}), a data mappában vannak.` : 'Megadva.'} ${
+        config.GATE_CODE ? 'Tartalék kapukód is be van állítva (GATE_CODE): ezt ne adjátok ki.' : 'A kapu minden beolvasáskor egyszer használható kódot ad.'
+      }`,
     },
     {
       ok: !local,

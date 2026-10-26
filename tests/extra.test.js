@@ -15,9 +15,9 @@ test('éles indítás titkok nélkül: a szerver generál sajátot, elmenti, és
     const saved = JSON.parse(fs.readFileSync(path.join(path.dirname(srv.dataFile), 'secrets.json'), 'utf8'));
     assert.match(saved.SESSION_SECRET, /^[0-9a-f]{64}$/);
     assert.ok(saved.GATE_QR_SECRET.length >= 16);
-    assert.match(saved.GATE_CODE, /^[A-Z]+\d{2}$/);
+    assert.equal(saved.GATE_CODE, undefined, 'közös kapukód nincs');
     assert.match(srv.log(), /generálta/);
-    assert.match(srv.log(), new RegExp(`kapukód.*${saved.GATE_CODE}`));
+    assert.match(srv.log(), /egyszer használható/);
     assert.equal((await new Client(srv.base).get('/healthz')).status, 200);
   } finally {
     srv.stop();

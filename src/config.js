@@ -63,13 +63,10 @@ const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, '..', 'data', 's
 // Így sosem a (forráskódban nyilvános) alapérték védi a kaput, és újraindítás után is ugyanazok maradnak.
 // Figyelem: felhőben, nem tartós lemezen minden új indításkor új titok készülne – ott add meg őket.
 const SECRETS_FILE = path.join(path.dirname(DATA_FILE), 'secrets.json');
-// a kapukód: a csapatok ezt írják be, ha a QR-kód más böngészőt nyit meg, ezért könnyen begépelhető szó
-const GATE_WORDS = ['TRIDENT', 'KORALL', 'NAUTILUS', 'SZIREN', 'TRITON', 'KRAKEN', 'DELFIN', 'GYONGY', 'MEDUZA', 'HULLAM', 'POLIP', 'KAGYLO'];
 function loadSecrets() {
   const wanted = {
     SESSION_SECRET: () => crypto.randomBytes(32).toString('hex'),
     GATE_QR_SECRET: () => crypto.randomBytes(12).toString('base64url'),
-    GATE_CODE: () => GATE_WORDS[crypto.randomInt(GATE_WORDS.length)] + crypto.randomInt(10, 100),
   };
   const missing = Object.keys(wanted).filter((k) => !process.env[k]);
   if (!missing.length) return { values: {}, generated: [] };
@@ -130,7 +127,11 @@ module.exports = {
   LAN_ADDRESSES: lan.map((a) => `${a.address} (${a.name})`),
   SESSION_SECRET: process.env.SESSION_SECRET || secrets.values.SESSION_SECRET,
   // A kapunál megjelenő kód, amit a csapatok beírnak a játékba
-  GATE_CODE: process.env.GATE_CODE || secrets.values.GATE_CODE,
+  // Tartalék, mindig érvényes kapukód – csak ha kifejezetten megadják (alapból nincs, mert egy közös kódot
+  // a csapatok továbbadhatnának egymásnak). Helyette a kapu minden beolvasáskor egyszer használható kódot ad.
+  GATE_CODE: process.env.GATE_CODE || '',
+  // Az egyszer használható kapukód érvényessége (perc)
+  GATE_CODE_TTL_MIN: num(process.env.GATE_CODE_TTL_MIN, 15),
   // A QR-kódba írt titok (ezt nyomtatja ki a szervező a helyszínre)
   GATE_QR_SECRET: process.env.GATE_QR_SECRET || secrets.values.GATE_QR_SECRET,
   // ezeket a szerver generálta (és a data/secrets.json fájlba mentette)

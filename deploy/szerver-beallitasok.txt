@@ -18,5 +18,5 @@ PRIVACY_EVENT=ESK – IVK Karestély, 2026. október 27., Széchenyi Étterem
 # PRIVACY_CONTACT=
 # PRIVACY_HOSTING=
 
-# A titkokat (SESSION_SECRET, GATE_QR_SECRET, GATE_CODE) és a szervezői kulcsot az első indításkor
+# A titkokat (SESSION_SECRET, GATE_QR_SECRET) és a szervezői kulcsot az első indításkor
 # a szerver generálja a data mappába. A data mappa maradjon meg a frissítések között!

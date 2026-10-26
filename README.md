@@ -94,7 +94,6 @@ Ugyanezek a terminálban is megadhatók:
 
 ```powershell
 $env:BASE_URL="http://192.168.1.20:3000"
-$env:GATE_CODE="SAJATKOD"
 $env:LETTERS_ANSWER="TITKOS"
 npm start
 ```
@@ -113,7 +112,7 @@ npm start
 | --- | --- | --- |
 | `PORT` | `3000` | A szerver portja |
 | `BASE_URL` | `http://localhost:3000` | A QR-kód ezt a címet használja. Telefonos játékhoz a gép LAN-címe vagy a valódi domain kell |
-| `GATE_CODE` | `ATLANTISZ` | A kód, amit a kapu mutat, ha a csapat nem a játék böngészőjével szkennel. **Állíts be sajátot** |
+| `GATE_CODE` | – | Közös, mindig érvényes tartalék kapukód. Alapból **nincs**: ha a csapat nem a játék böngészőjével szkennel, a kapu minden beolvasáskor egyszer használható, `GATE_CODE_TTL_MIN` (15) percig érvényes kódot ad, így a csapatok nem tudják egymásnak bemondani |
 | `GATE_QR_SECRET` | `qr-kapu-2026` | A QR-kódba írt titok. **Élesben kötelező cserélni** |
 | `LETTERS_ANSWER` | `ORÁKULUM` | A „régi üzenet" megoldó szava (csak akkor kell, ha más szót szeretnél) |
 | `GAME_END_AT` | – | A játék vége, pl. `2026-10-27 22:00`. Utána nem lehet csapatot indítani és válaszolni, a ranglista végleges, a játékosok a „kapu bezárult" képernyőt látják. Fél órával előtte a telefonok figyelmeztetnek |
@@ -172,7 +171,7 @@ A legnagyobb kockázat a **helyszíni Wi-Fi**. Az egyetemi és rendezvényháló
 2. **Próbakör a helyszínen**, valódi telefonokkal: csapat létrehozása, csatlakozás egy második telefonról, egy fotó feltöltése, a QR-kapu beolvasása.
 3. **Tűzfal (laptopos futtatásnál):** Windows első indításkor kérdez, engedélyezd a Node.js-t a privát hálózaton.
 4. **Gép IP-címe:** `ipconfig` → az aktív adapter IPv4-címe (pl. `192.168.1.20`). A telefonok ezt nyitják meg: `http://192.168.1.20:3000`.
-5. **Titkok és kódok:** saját `SESSION_SECRET`, `GATE_QR_SECRET`, `GATE_CODE`. A szervezői linket csak a szervezők kapják meg.
+5. **Titkok és kódok:** saját `SESSION_SECRET`, `GATE_QR_SECRET` (ha nincs megadva, a szerver generálja). A szervezői linket csak a szervezők kapják meg.
 6. **Tartalom:** a képek, a szövegek és a megfejtések már benne vannak a játékban. A `.env`-ben a `GAME_END_AT` (22:00) és a `RESULTS_NOTE` legyen beállítva.
 7. **Adatvédelem:** `PRIVACY_*` mezők kitöltve, és a tájékoztatót az adatvédelmi tisztviselő átnézte (lásd 10. pont).
 8. **QR-kód** újragenerálva a végleges `BASE_URL`-lel, és kinyomtatva (lásd 6. pont).
@@ -185,7 +184,6 @@ $env:NODE_ENV="production"
 $env:BASE_URL="http://192.168.1.20:3000"
 $env:SESSION_SECRET="<hosszú véletlen szöveg>"
 $env:GATE_QR_SECRET="<hosszú véletlen szöveg>"
-$env:GATE_CODE="SAJATKOD"
 $env:LETTERS_ANSWER="TITKOS"
 $env:PRIVACY_CONTROLLER="..."
 $env:PRIVACY_CONTACT="..."
@@ -276,7 +274,7 @@ npm run qr                                 # létrejön: public\assets\qr-kapu.p
 ```
 
 - Ha a csapat **ugyanazzal a böngészővel** olvassa be a QR-kódot, amelyben a játék fut, a kapu **magától kinyílik**, kódot nem kell beírni. Így a kódot más csapatnak sem lehet elárulni.
-- Ha a kamera **másik böngészőt** nyit meg, a kapu oldala mutatja a `GATE_CODE`-ot, amit a játékba kell beírni.
+- Ha a kamera **másik böngészőt** nyit meg, a kapu oldala egy **egyszer használható, 15 percig érvényes kódot** mutat, amit a játékba kell beírni. Minden beolvasás új kódot ad.
 - Ha egy csapat **túl korán** szkenneli, a kapu zárva marad, és kódot sem mutat.
 
 A QR-kódot újra kell generálni, amikor a `BASE_URL` vagy a `GATE_QR_SECRET` változik.

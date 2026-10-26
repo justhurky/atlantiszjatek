@@ -37,13 +37,13 @@ test('titkok nélkül a szerver sajátot generál; újraindítás után ugyanaz 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'atlantisz-titok-'));
   const env = { SESSION_SECRET: '', GATE_QR_SECRET: '', GATE_CODE: '', DATA_FILE: path.join(dir, 'state.json') };
   try {
+    const read = () => fs.readFileSync(path.join(dir, 'secrets.json'), 'utf8');
     const first = await startServer(env);
-    const code1 = /kapukód[^:]*: (\S+)/.exec(first.log())[1];
+    const saved1 = read();
     await first.stop();
     const second = await startServer(env);
-    const code2 = /kapukód[^:]*: (\S+)/.exec(second.log())[1];
-    assert.equal(code2, code1);
-    assert.notEqual(code1, 'ATLANTISZ');
+    assert.equal(read(), saved1, 'újraindítás után ugyanazok a titkok');
+    assert.notEqual(JSON.parse(saved1).GATE_QR_SECRET, 'qr-kapu-2026');
     assert.equal((await new Client(second.base).get('/kapu/qr-kapu-2026')).text.includes('Zárt kapu'), true, 'a régi nyilvános QR-titok nem nyit');
     await second.stop();
   } finally {

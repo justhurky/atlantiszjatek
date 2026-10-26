@@ -242,9 +242,11 @@ test('QR-kapu: idő előtti szkennelés nem nyit, és a kódot sem árulja el', 
   });
 });
 
-test('QR-kapu: más böngészőből (munkamenet nélkül) a beírható kódot mutatja; hibás titokra zárva', async () => {
+test('QR-kapu: más böngészőből (munkamenet nélkül) egyszer használható kódot mutat, a tartalék kódot nem; hibás titokra zárva', async () => {
   await withServer({ GATE_QR_SECRET: 'qr-titok', GATE_CODE: 'KAPUKOD' }, async (srv) => {
-    assert.match((await new Client(srv.base).get('/kapu/qr-titok')).text, /KAPUKOD/);
+    const shown = (await new Client(srv.base).get('/kapu/qr-titok')).text;
+    assert.match(shown, /<p class="code">[A-Z0-9]{6}<\/p>/);
+    assert.equal(shown.includes('KAPUKOD'), false, 'a közös tartalék kódot sosem mutatja');
     const wrong = await new Client(srv.base).get('/kapu/rossz');
     assert.match(wrong.text, /Zárt kapu/);
     assert.equal(wrong.text.includes('KAPUKOD'), false);
@@ -543,4 +545,36 @@ test('játékidő: a vége után nincs új csapat, csatlakozás és válasz; a k
 
 test('hibás GAME_END_AT esetén a szerver nem indul el, érthető hibával', async () => {
   await assert.rejects(startServer({ GAME_END_AT: 'holnap este' }), /GAME_END_AT/);
+});
+
+test('QR-kapu: minden beolvasás új kódot ad, egy kód csak egyszer nyit; közös kapukód alapból nincs', async () => {
+  await withServer({ GATE_QR_SECRET: 'qr-titok', GATE_CODE: '', LETTERS_ANSWER: 'TITKOS' }, async (srv) => {
+    const codeOf = async () => /<p class="code">([A-Z0-9]{6})<\/p>/.exec((await new Client(srv.base).get('/kapu/qr-titok')).text)[1];
+    const a = new Client(srv.base);
+    const b = new Client(srv.base);
+    await a.post('/api/team/create', { name: 'Megtalálók' });
+    await b.post('/api/team/create', { name: 'Hallgatózók' });
+    await playTo(a, 'atlantis-gate');
+    await playTo(b, 'atlantis-gate');
+    const c1 = await codeOf();
+    const c2 = await codeOf();
+    assert.notEqual(c1, c2, 'minden beolvasás új kódot ad');
+    assert.equal((await b.post('/api/game/answer', { value: 'ATLANTISZ' })).json.correct, false, 'nincs közös kód');
+    const ok = await a.post('/api/game/answer', { value: c1.toLowerCase() });
+    assert.equal(ok.json.correct, true);
+    assert.equal(ok.json.state.finished, true);
+    assert.equal((await b.post('/api/game/answer', { value: c1 })).json.correct, false, 'a bemondott, már felhasznált kód nem nyit');
+    assert.equal((await b.post('/api/game/answer', { value: c2 })).json.correct, true);
+  });
+});
+
+test('QR-kapu: a lejárt egyszer használható kód nem nyit', async () => {
+  await withServer({ GATE_QR_SECRET: 'qr-titok', GATE_CODE: '', GATE_CODE_TTL_MIN: '0.003', LETTERS_ANSWER: 'TITKOS' }, async (srv) => {
+    const c = new Client(srv.base);
+    await c.post('/api/team/create', { name: 'Lassúk' });
+    await playTo(c, 'atlantis-gate');
+    const code = /<p class="code">([A-Z0-9]{6})<\/p>/.exec((await new Client(srv.base).get('/kapu/qr-titok')).text)[1];
+    await new Promise((r) => setTimeout(r, 400));
+    assert.equal((await c.post('/api/game/answer', { value: code })).json.correct, false);
+  });
 });

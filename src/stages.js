@@ -180,7 +180,7 @@ const STAGES = [
     intro: 'A kőkapu zárva áll. A helyszínen elrejtett QR-kód nyitja meg.',
     question:
       'Keressétek meg a helyszínen a QR-kódot, és olvassátok be a telefon kamerájával. Ha a kamera ezt a böngészőt nyitja meg, a kapu magától kinyílik. Ha nem, írjátok be ide a kódot, amit a kapu mutat.',
-    answer: GATE_CODE,
+    answer: GATE_CODE || null, // a szerver az egyszer használható kapukódokat is elfogadja
     hint: 'A QR-kódot ugyanazzal a telefonnal olvassátok be, amelyen a játék fut. Ha más böngésző nyílik meg, a kapu oldalán kiírt kódot írjátok be ide.',
     successText: 'A kapu feltárul, és a fény Atlantisz felé vezet!',
   },
