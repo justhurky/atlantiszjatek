@@ -365,7 +365,7 @@ test('admin felület: belépés, élő csapatlista, átléptetés, és a játék
   // a játékos telefonján az admin cím nem létezik
   const resp = await player.goto(srv.base + '/admin');
   assert.equal(resp.status(), 404);
-  assert.match(await player.textContent('h1'), /Nincs ilyen oldal/);
+  assert.match(await player.textContent('h1'), /Szervezői felület/);
   await player.goto(srv.base + '/');
   await player.waitForSelector('.station-head', { timeout: 6000 });
   // a szervezői link beléptet, és a címsorból eltűnik a kulcs

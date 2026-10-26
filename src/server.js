@@ -15,7 +15,7 @@ const { checkTeamName, setExtraBlocked } = require('./namefilter');
 setExtraBlocked(process.env.BLOCKED_NAMES || '');
 const { sameAnswer } = require('./utils');
 const { PersistentSessionStore, createPersistence } = require('./persistence');
-const { privacyPage, gatePage, notFoundPage, posterPage, POSTERS } = require('./pages');
+const { privacyPage, gatePage, notFoundPage, adminLoginPage, posterPage, POSTERS } = require('./pages');
 const { qrArtSvg } = require('./qrart');
 
 const app = express();
@@ -1317,7 +1317,7 @@ app.get('/api/admin/photos/:file', requireAdmin, (req, res) => {
 
 app.get('/admin', (req, res) => {
   res.set('Cache-Control', 'no-store');
-  if (!isAdmin(req)) return res.status(404).type('html').send(notFoundPage());
+  if (!isAdmin(req)) return res.status(404).type('html').send(adminLoginPage());
   res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 

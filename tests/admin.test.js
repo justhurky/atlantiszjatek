@@ -26,7 +26,8 @@ test('belépés nélkül az admin oldal, a fájljai, az áttekintés és a műve
   for (const url of ['/admin', '/admin.html', '/js/admin.js', '/css/admin.css', '/api/admin/overview', '/api/admin/access-qr.png']) {
     assert.equal((await c.get(url)).status, 404, url);
   }
-  assert.match((await c.get('/admin')).text, /Nincs ilyen oldal/);
+  assert.match((await c.get('/admin')).text, /még nem léptél be/);
+  assert.doesNotMatch((await c.get('/admin')).text, /admin-key|\/admin\/[A-Za-z0-9_-]{16}/);
   assert.equal((await c.post(`/api/admin/teams/${code}/advance`)).status, 404);
   assert.equal((await c.post(`/api/admin/teams/${code}/delete`)).status, 404);
   assert.equal((await c.post('/api/admin/key/rotate')).status, 404);

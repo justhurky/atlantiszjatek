@@ -82,6 +82,14 @@ function notFoundPage() {
     <p>Ez az oldal nem található.</p><a class="btn" href="/">Vissza a játékhoz</a></div>`, { center: true });
 }
 
+// A /admin cím belépés nélkül: a szervezői QR-kódot beolvasó, de ezen a telefonon még be nem lépett szervezőnek
+function adminLoginPage() {
+  return layout('Szervezői felület', `<div><h1>Szervezői felület</h1>
+    <p>Ezen a telefonon még nem léptél be, vagy lejárt a belépésed.</p>
+    <p>Olvasd be egyszer a <strong>szervezői belépő linket</strong> (a már belépett szervező telefonján: Beállítások fül, QR-kód), utána ez a kód mindig egyenesen az admin felületre visz.</p>
+    <a class="btn" href="/">Vissza a játékhoz</a></div>`, { center: true });
+}
+
 // ---------- nyomtatható A4-es plakát a QR-kóddal (belépés a játékba / Atlantisz kapuja) ----------
 
 const MEANDER =
@@ -359,4 +367,4 @@ function privacyPage(config) {
   return layout('Adatkezelési tájékoztató', body);
 }
 
-module.exports = { gatePage, privacyPage, notFoundPage, posterPage, POSTERS, esc };
+module.exports = { gatePage, privacyPage, notFoundPage, adminLoginPage, posterPage, POSTERS, esc };
