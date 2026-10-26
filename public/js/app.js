@@ -123,11 +123,61 @@ async function request(url, { method = 'GET', body } = {}) {
   return data;
 }
 
+// Visszajelzés. A helyes/helytelen válasz és a hibák középen, felugró ablakban jelennek meg (telefonon
+// a lap alján nem vennék észre); a semleges állapotüzenetek („Feltöltés…") maradnak a feladat alatt.
+// A szöveg a lap alján is bekerül (rejtve), hogy a képernyőolvasó is felolvassa.
 function setFeedback(text, kind = '') {
   const el = document.getElementById('feedback');
-  if (!el) return;
-  el.textContent = text;
-  el.className = `feedback ${kind}`.trim();
+  const popup = Boolean(text) && (kind === 'ok' || kind === 'bad');
+  if (el) {
+    el.textContent = text;
+    el.className = `feedback ${kind}${popup ? ' sr-only' : ''}`.trim();
+  }
+  if (popup) showVerdict(text, kind);
+  else if (!text) hideVerdict();
+}
+
+let verdictTimer = null;
+
+// Középre ugró ablak. Helyes válasznál a következő feladat megjelenésekor tűnik el (render),
+// rossz válasznál koppintásra, az „Újrapróbálom" gombbal vagy pár másodperc után.
+function showVerdict(text, kind) {
+  hideVerdict();
+  const ok = kind === 'ok';
+  const el = document.createElement('div');
+  el.className = `verdict ${ok ? 'is-ok' : 'is-bad'}`;
+  el.id = 'verdict';
+  el.setAttribute('role', 'alertdialog');
+  el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-labelledby', 'verdictTitle');
+  el.setAttribute('aria-describedby', 'verdictText');
+  el.innerHTML = `
+    <div class="verdict-card">
+      <div class="verdict-icon" aria-hidden="true">${ok ? '✓' : '✕'}</div>
+      <p class="verdict-title" id="verdictTitle">${ok ? 'Helyes!' : 'Nem egészen…'}</p>
+      <p class="verdict-text" id="verdictText">${esc(text)}</p>
+      ${ok ? '<p class="verdict-next">Merülés a következő feladathoz…</p>' : '<button class="btn" type="button" id="verdictClose">Újrapróbálom</button>'}
+    </div>`;
+  document.body.appendChild(el);
+  if (!ok) {
+    const close = () => {
+      hideVerdict();
+      const input = app.querySelector('form.answer input');
+      if (input && !input.disabled) input.focus({ preventScroll: true });
+    };
+    el.addEventListener('click', close);
+    el.querySelector('#verdictClose').focus({ preventScroll: true });
+    verdictTimer = setTimeout(close, 4500);
+  } else {
+    // biztonsági időzítő, ha a következő feladat valamiért késne
+    verdictTimer = setTimeout(hideVerdict, 8000);
+  }
+}
+
+function hideVerdict() {
+  clearTimeout(verdictTimer);
+  verdictTimer = null;
+  document.getElementById('verdict')?.remove();
 }
 
 function setBusy(on) {
@@ -297,6 +347,7 @@ function teamLine(t) {
 }
 
 function showStart(message, kind) {
+  hideVerdict();
   stopPolling();
   stopHintTimer();
   stopLiveBoard();
@@ -401,6 +452,7 @@ function renderEnded(state) {
 
 // ===== Állomások megjelenítése =====
 function render(state) {
+  hideVerdict();
   busy = false;
   chosenPhoto = null;
   currentKey = null;
@@ -546,7 +598,7 @@ function handleResult(data) {
   }
   setFeedback(data.message, data.correct ? 'ok' : 'bad');
   if (data.correct) {
-    setTimeout(() => render(data.state), 1800);
+    setTimeout(() => render(data.state), 2200);
     return true;
   }
   // Rossz válasz után a segítség elérhetővé válhat
@@ -811,7 +863,7 @@ function renderShark(box, s) {
         }
         setFeedback(data.message, data.correct ? 'ok' : 'bad');
         if (data.correct) {
-          setTimeout(() => render(data.state), 1800);
+          setTimeout(() => render(data.state), 2200);
         } else {
           hideZone();
           zone = null;

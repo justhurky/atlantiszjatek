@@ -671,3 +671,26 @@ test('a játékidő lejárta után: a kezdőképernyő jelzi, új csapat nem ind
     ended.stop();
   }
 });
+
+test('válasz-visszajelzés: középen felugró ablak; rossznál bezárható, helyesnél a következő feladatnál eltűnik', async () => {
+  const page = await phone();
+  await createTeam(page, 'Ablakosok');
+  await uploadStatue(page);
+  await waitStage(page, 'Ki látható a képen');
+  await page.click('.option:has-text("Poszeidón")');
+  await page.waitForSelector('#verdict.is-ok', { timeout: 5000 });
+  assert.match(await page.textContent('#verdict'), /Helyes!/);
+  const box = await page.locator('.verdict-card').boundingBox();
+  const vp = page.viewportSize();
+  assert.ok(Math.abs(box.y + box.height / 2 - vp.height / 2) < vp.height * 0.15, 'függőlegesen középen van');
+  await waitStage(page, 'Istenek felismerése', 8000);
+  assert.equal(await page.locator('#verdict').count(), 0, 'a következő feladatnál eltűnt');
+  await page.click('.option:has-text("Zeusz")');
+  await page.waitForSelector('#verdict.is-bad', { timeout: 5000 });
+  assert.match(await page.textContent('#verdict'), /Nem ez a megoldás/);
+  await page.click('#verdictClose');
+  assert.equal(await page.locator('#verdict').count(), 0, 'bezárható');
+  assert.ok(await page.isVisible('.option:has-text("Hádész")'), 'a feladat újra használható');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

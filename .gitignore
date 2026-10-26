@@ -29,3 +29,6 @@ data/
 /IVK_*.png
 /valaszok a kerdesekre/
 /karestely-beallitasok.txt
+
+# kinyomtatandó QR-kódok (a kapu QR-kódjában titok van!)
+/nyomtatas/
