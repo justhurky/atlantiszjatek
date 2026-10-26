@@ -305,6 +305,7 @@ function privacyPage(config) {
     <p><strong>Adatkezelő:</strong> ${field(config.PRIVACY_CONTROLLER, 'a szervező szervezet neve és címe')}</p>
     <p><strong>Elérhetőség:</strong> ${contact}</p>
     ${config.PRIVACY_DPO ? `<p><strong>Adatvédelmi tisztviselő:</strong> ${esc(config.PRIVACY_DPO)}</p>` : ''}
+    ${config.PRIVACY_DEVELOPER ? `<p><strong>Az alkalmazás fejlesztője és üzemeltetője:</strong> ${esc(config.PRIVACY_DEVELOPER)}</p>` : ''}
   </div>
 
   <h2>2. Milyen adatokat kezelünk, miért és meddig?</h2>

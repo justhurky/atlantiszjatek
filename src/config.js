@@ -194,6 +194,8 @@ module.exports = {
   PRIVACY_CONTACT: process.env.PRIVACY_CONTACT || '',
   PRIVACY_EVENT: process.env.PRIVACY_EVENT || '',
   PRIVACY_DPO: process.env.PRIVACY_DPO || '',
+  // Ki készítette és üzemelteti az alkalmazást (a tájékoztatóban és a játék alján jelenik meg)
+  PRIVACY_DEVELOPER: process.env.PRIVACY_DEVELOPER || '',
   PRIVACY_HOSTING: process.env.PRIVACY_HOSTING || '',
   PRIVACY_UPDATED: process.env.PRIVACY_UPDATED || '',
 };
