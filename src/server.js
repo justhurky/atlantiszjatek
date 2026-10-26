@@ -11,6 +11,8 @@ const QRCode = require('qrcode');
 
 const config = require('./config');
 const { STAGES, SHARK } = require('./stages');
+const { checkTeamName, setExtraBlocked } = require('./namefilter');
+setExtraBlocked(process.env.BLOCKED_NAMES || '');
 const { sameAnswer } = require('./utils');
 const { PersistentSessionStore, createPersistence } = require('./persistence');
 const { privacyPage, gatePage, notFoundPage, posterPage, POSTERS } = require('./pages');
@@ -581,11 +583,13 @@ app.get('/api/game', (req, res) => {
 });
 
 app.post('/api/team/create', createLimit, gameOpen, (req, res) => {
+  const checked = checkTeamName(req.body?.name);
+  if (!checked.ok) return res.status(400).json({ error: checked.error });
   leaveTeam(req);
   if (teams.size >= config.MAX_TEAMS) {
     return res.status(503).json({ error: 'Most nem lehet több csapatot létrehozni. Szólj a szervezőnek!' });
   }
-  const name = String(req.body?.name ?? '').trim().slice(0, 40) || 'Kalandor csapat';
+  const name = checked.name;
   const code = newCode();
   const team = newTeam(code, name, req.sessionID, Date.now());
   teams.set(code, team);

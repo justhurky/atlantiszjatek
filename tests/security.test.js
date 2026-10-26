@@ -108,8 +108,8 @@ test('a válasz-korlát csapatonként számol: egy másik csapatot nem érint', 
   await withServer({ ANSWER_RATE_PER_MIN: '2' }, async (srv) => {
     const a = new Client(srv.base);
     const b = new Client(srv.base);
-    await a.post('/api/team/create', { name: 'A' });
-    await b.post('/api/team/create', { name: 'B' });
+    await a.post('/api/team/create', { name: 'Alfa' });
+    await b.post('/api/team/create', { name: 'Béta' });
     for (const c of [a, b]) await c.req('POST', '/api/game/upload', photoForm());
     for (let i = 0; i < 3; i++) await a.post('/api/game/answer', { value: 'x' });
     const other = await b.post('/api/game/answer', { value: 'x' });
@@ -120,7 +120,7 @@ test('a válasz-korlát csapatonként számol: egy másik csapatot nem érint', 
 test('csapat-korlát: MAX_TEAMS felett nem jön létre új csapat (memória-védelem)', async () => {
   await withServer({ MAX_TEAMS: '2' }, async (srv) => {
     const s = [];
-    for (let i = 0; i < 3; i++) s.push((await new Client(srv.base).post('/api/team/create', { name: `T${i}` })).status);
+    for (let i = 0; i < 3; i++) s.push((await new Client(srv.base).post('/api/team/create', { name: `Csapat ${i}` })).status);
     assert.deepEqual(s, [200, 200, 503]);
   });
 });

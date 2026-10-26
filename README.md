@@ -113,6 +113,7 @@ npm start
 | `PORT` | `3000` | A szerver portja |
 | `BASE_URL` | `http://localhost:3000` | A QR-kód ezt a címet használja. Telefonos játékhoz a gép LAN-címe vagy a valódi domain kell |
 | `GATE_CODE` | – | Közös, mindig érvényes tartalék kapukód. Alapból **nincs**: ha a csapat nem a játék böngészőjével szkennel, a kapu minden beolvasáskor egyszer használható, `GATE_CODE_TTL_MIN` (15) percig érvényes kódot ad, így a csapatok nem tudják egymásnak bemondani |
+| `BLOCKED_NAMES` | – | További tiltott szavak a csapatnevekhez, vesszővel elválasztva (a beépített trágárszűrő mellé) |
 | `GATE_QR_SECRET` | `qr-kapu-2026` | A QR-kódba írt titok. **Élesben kötelező cserélni** |
 | `LETTERS_ANSWER` | `ORÁKULUM` | A „régi üzenet" megoldó szava (csak akkor kell, ha más szót szeretnél) |
 | `GAME_END_AT` | – | A játék vége, pl. `2026-10-27 22:00`. Utána nem lehet csapatot indítani és válaszolni, a ranglista végleges, a játékosok a „kapu bezárult" képernyőt látják. Fél órával előtte a telefonok figyelmeztetnek |

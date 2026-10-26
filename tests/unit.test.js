@@ -84,3 +84,23 @@ test('GAME_END_AT: a rendezvény időzónájában értendő, nyári és téli id
   assert.equal(new Date(parseTime('2026-10-27T22:00:00+01:00')).toISOString(), '2026-10-27T21:00:00.000Z');
   assert.throws(() => parseTime('holnap'), /GAME_END_AT/);
 });
+
+// ---------- csapatnév-szűrő ----------
+{
+  const { test } = require('node:test');
+  const assert = require('node:assert');
+  const { checkTeamName, isOffensive } = require('../src/namefilter');
+  test('trágár csapatnevek trükkökkel együtt fennakadnak', () => {
+    for (const n of ['fasz', 'f@sz', 'F.A.S.Z', 'f a s z', 'f*sz', 'faaasz', 'FÁSZOK', 'kurwa', 'k*rva', 'p1csa', 'köcsög', 'szar', 'kapd be', 'f u c k', 'Sh1t', 'náci', '𝐟𝐚𝐬𝐳', 'fаsz']) {
+      assert.ok(isOffensive(n), n);
+      assert.equal(checkTeamName(n).ok, false, n);
+    }
+  });
+  test('normális csapatnevek átmennek', () => {
+    for (const n of ['Atlantisz Kalózai', 'Szarvasok', 'Császárok', 'Basszus Banda', 'Alfa Szél', 'Pocsolya Lovagok', 'Foszfor', 'Gondolkodók', 'Szárnyas Halak', 'Grapefruit', 'IVK Mérnökök']) {
+      assert.ok(checkTeamName(n).ok, n);
+    }
+    assert.equal(checkTeamName('').name, 'Kalandor csapat');
+    assert.equal(checkTeamName('!!!').ok, false);
+  });
+}

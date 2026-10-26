@@ -94,11 +94,11 @@ describe('állapot és csapat-létrehozás', () => {
   });
 
   test('új csapat létrehozásakor a régi csapatból kilép', async () => {
-    const a = await newTeam('A');
+    const a = await newTeam('Alfa');
     const b = newClient();
     await b.post('/api/team/join', { code: a.code });
     assert.equal((await a.client.get('/api/game')).json.team.members, 2);
-    await b.post('/api/team/create', { name: 'B' });
+    await b.post('/api/team/create', { name: 'Béta' });
     assert.equal((await a.client.get('/api/game')).json.team.members, 1);
   });
 });
@@ -156,8 +156,8 @@ describe('csatlakozás és 5 fős korlát', () => {
   });
 
   test('egy tag másik csapatba lépésekor az előzőből kikerül', async () => {
-    const a = await newTeam('A');
-    const b = await newTeam('B');
+    const a = await newTeam('Alfa');
+    const b = await newTeam('Béta');
     const c = newClient();
     await c.post('/api/team/join', { code: a.code });
     await c.post('/api/team/join', { code: b.code });
@@ -375,11 +375,11 @@ describe('cápa-kör', () => {
     }
   });
 
-  test('a kör 360°-os ismétlődése: 4.5 mp (0°) nem zöld', async () => {
+  test('a kör 360°-os ismétlődése: egy teljes kör (0°) nem zöld', async () => {
     const t = await newTeam();
     await playTo(t.client, 'shark');
-    await t.client.post('/api/game/shark/start');
-    const r = await t.client.post('/api/game/shark/press', { elapsedMs: 4500 });
+    const z = (await t.client.post('/api/game/shark/start')).json.shark;
+    const r = await t.client.post('/api/game/shark/press', { elapsedMs: angleMs(z, 360) });
     assert.equal(r.json.correct, false);
   });
 

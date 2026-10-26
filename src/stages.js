@@ -8,7 +8,7 @@ const { GATE_CODE, LETTERS_ANSWER } = require('./config');
 // Cápa-kör: sebesség (fok/mp), a zöld sáv szélessége (fok), és a sáv kezdetének sorsolási tartománya.
 // 0° = felül, óramutató járása szerint. A sávot a szerver minden próbálkozásnál újra sorsolja,
 // így nem lehet egy másik csapattól „3 másodpercnél nyomd" típusú tippet kapni.
-const SHARK = { speed: 80, greenWidth: 80, zoneMin: 100, zoneMax: 280 };
+const SHARK = { speed: 120, greenWidth: 80, zoneMin: 100, zoneMax: 280 };
 
 // A „régi üzenet" szövege: a {kapcsos zárójelbe} tett betűk lesznek kiemelve.
 // A betűk szándékosan összekeverve követik egymást: a csapatnak sorba kell raknia őket (ORÁKULUM).
