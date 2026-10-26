@@ -26,7 +26,7 @@ test('belépés nélkül az admin oldal, a fájljai, az áttekintés és a műve
   for (const url of ['/admin', '/admin.html', '/js/admin.js', '/css/admin.css', '/api/admin/overview', '/api/admin/access-qr.png']) {
     assert.equal((await c.get(url)).status, 404, url);
   }
-  assert.match((await c.get('/admin')).text, /még nem léptél be/);
+  assert.match((await c.get('/admin')).text, /Szervezői felület/);
   assert.doesNotMatch((await c.get('/admin')).text, /admin-key|\/admin\/[A-Za-z0-9_-]{16}/);
   assert.equal((await c.post(`/api/admin/teams/${code}/advance`)).status, 404);
   assert.equal((await c.post(`/api/admin/teams/${code}/delete`)).status, 404);
@@ -315,4 +315,39 @@ test('tesztfázis vége: a „TÖRLÉS" szóval minden csapat és fotó törlőd
   } finally {
     s.stop();
   }
+});
+
+test('jelszavas belépés a /admin címen: rossz jelszó 401, jó jelszó beléptet, 10 hiba után 429', async () => {
+  const s = await startServer({ ADMIN_PASSWORD: 'Tengeri-Csillag-77' });
+  const form = (pw) => new URLSearchParams({ jelszo: pw }).toString();
+  const login = (c, pw) => c.req('POST', '/admin/belepes', form(pw), { 'content-type': 'application/x-www-form-urlencoded' });
+  try {
+    const c = new Client(s.base);
+    const page = await c.get('/admin');
+    assert.equal(page.status, 404);
+    assert.match(page.text, /name="jelszo"/);
+    const bad = await login(c, 'rossz-jelszo');
+    assert.equal(bad.status, 401);
+    assert.match(bad.text, /Hibás jelszó/);
+    assert.equal((await c.get('/api/admin/overview')).status, 404);
+    const ok = await login(c, 'Tengeri-Csillag-77');
+    assert.equal(ok.status, 303);
+    assert.equal(ok.headers.get('location'), '/admin');
+    assert.equal((await c.get('/admin')).status, 200);
+    assert.equal((await c.get('/api/admin/overview')).status, 200);
+    const d = new Client(s.base);
+    const st = [];
+    for (let i = 0; i < 11; i++) st.push((await login(d, `tipp-${i}`)).status);
+    assert.equal(st[10], 429);
+    assert.equal((await login(d, 'Tengeri-Csillag-77')).status, 429, 'zárolás alatt a jó jelszó sem megy');
+  } finally {
+    s.stop();
+  }
+});
+
+test('ADMIN_PASSWORD nélkül nincs jelszavas belépés', async () => {
+  const c = new Client(srv.base);
+  assert.doesNotMatch((await c.get('/admin')).text, /name="jelszo"/);
+  const r = await c.req('POST', '/admin/belepes', 'jelszo=barmi', { 'content-type': 'application/x-www-form-urlencoded' });
+  assert.equal(r.status, 404);
 });

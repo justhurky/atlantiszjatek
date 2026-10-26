@@ -32,6 +32,10 @@ const STYLE = `
   .btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;margin-top:18px;padding:12px 24px;
        border-radius:10px;font-weight:700;color:#101820;background:var(--gold);text-decoration:none}
   .btn:hover{background:var(--gold-light)}
+  .login{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw);margin:18px auto 8px;text-align:left}
+  .login input{min-height:52px;padding:10px 14px;border-radius:10px;border:1px solid var(--line-gold);background:rgba(3,17,33,.8);color:var(--ink);font-size:18px}
+  .login .btn{margin-top:6px;font:inherit;font-weight:700;border:0;cursor:pointer}
+  .err{color:#ff9d8f;margin:2px 0}
   .todo{background:rgba(255,210,122,.14);color:#ffd27a;border:1px dashed #ffd27a;border-radius:6px;padding:0 6px}
   .table{width:100%;border-collapse:collapse;font-size:16px}
   .table th,.table td{text-align:left;vertical-align:top;padding:10px 8px;border-bottom:1px solid var(--line)}
@@ -82,12 +86,19 @@ function notFoundPage() {
     <p>Ez az oldal nem található.</p><a class="btn" href="/">Vissza a játékhoz</a></div>`, { center: true });
 }
 
-// A /admin cím belépés nélkül: a szervezői QR-kódot beolvasó, de ezen a telefonon még be nem lépett szervezőnek
-function adminLoginPage() {
+// A /admin cím belépés nélkül: jelszót kér (ha nincs beállítva jelszó, csak útmutatót ad)
+function adminLoginPage({ enabled = true, error = '' } = {}) {
+  const form = enabled
+    ? `<form method="post" action="/admin/belepes" class="login">
+        <label for="pw">Szervezői jelszó</label>
+        <input id="pw" name="jelszo" type="password" autocomplete="current-password" required autofocus>
+        ${error ? `<p class="err" role="alert">${esc(error)}</p>` : ''}
+        <button class="btn" type="submit">Belépés</button>
+      </form>`
+    : `<p class="soft">A jelszavas belépés nincs bekapcsolva (ADMIN_PASSWORD). Lépj be a szervezői linkkel.</p>`;
   return layout('Szervezői felület', `<div><h1>Szervezői felület</h1>
-    <p>Ezen a telefonon még nem léptél be, vagy lejárt a belépésed.</p>
-    <p>Olvasd be egyszer a <strong>szervezői belépő linket</strong> (a már belépett szervező telefonján: Beállítások fül, QR-kód), utána ez a kód mindig egyenesen az admin felületre visz.</p>
-    <a class="btn" href="/">Vissza a játékhoz</a></div>`, { center: true });
+    <p class="soft">Csak a szervezőknek.</p>${form}
+    <p><a href="/">Vissza a játékhoz</a></p></div>`, { center: true });
 }
 
 // ---------- nyomtatható A4-es plakát a QR-kóddal (belépés a játékba / Atlantisz kapuja) ----------

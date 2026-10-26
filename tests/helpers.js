@@ -84,7 +84,7 @@ class Client {
     if (body instanceof FormData) {
       payload = body;
     } else if (typeof body === 'string') {
-      headers['content-type'] = 'application/json';
+      headers['content-type'] ??= 'application/json';
       payload = body;
     } else if (body !== undefined) {
       headers['content-type'] = 'application/json';

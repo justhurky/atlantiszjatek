@@ -1041,7 +1041,7 @@ function adminTeam(team) {
 
 // A szervezői link: egyszeri megnyitás után a telefon belépve marad (ADMIN_SESSION_HOURS óráig)
 app.get('/admin/:key', (req, res, next) => {
-  if (req.params.key === 'plakat') return next(); // a nyomtatható plakát útvonala (lent)
+  if (req.params.key === 'plakat' || req.params.key === 'belepes') return next(); // külön útvonalak (lent)
   res.set('Cache-Control', 'no-store');
   if (loginBlocked(req.ip)) return res.status(429).type('html').send(notFoundPage());
   if (!keyMatches(req.params.key)) {
@@ -1056,6 +1056,37 @@ app.get('/admin/:key', (req, res, next) => {
     req.session.adminKeyId = keyId();
     req.session.cookie.maxAge = config.ADMIN_SESSION_HOURS * 60 * 60 * 1000;
     // átirányítás a kulcs nélküli címre: a kulcs nem marad a címsorban és az előzményekben
+    res.redirect(303, '/admin');
+  });
+});
+
+// Jelszavas belépés: a /admin cím belépés nélkül ezt az űrlapot mutatja
+if (config.ADMIN_PASSWORD && config.ADMIN_PASSWORD.length < 8) {
+  throw new Error('Az ADMIN_PASSWORD legalább 8 karakter legyen.');
+}
+const passwordOk = (given) => {
+  if (!config.ADMIN_PASSWORD) return false;
+  const a = crypto.createHash('sha256').update(String(given ?? '')).digest();
+  const b = crypto.createHash('sha256').update(config.ADMIN_PASSWORD).digest();
+  return crypto.timingSafeEqual(a, b);
+};
+app.get('/admin/belepes', (req, res) => res.redirect(303, '/admin'));
+app.post('/admin/belepes', express.urlencoded({ extended: false, limit: '2kb' }), (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  const page = (status, error) => res.status(status).type('html').send(adminLoginPage({ enabled: Boolean(config.ADMIN_PASSWORD), error }));
+  if (!config.ADMIN_PASSWORD) return page(404, '');
+  if (loginBlocked(req.ip)) return page(429, 'Túl sok hibás próbálkozás. Várj egy percet, és próbáld újra!');
+  if (!passwordOk(req.body?.jelszo)) {
+    loginFailed(req.ip);
+    return page(401, 'Hibás jelszó.');
+  }
+  loginFailures.delete(req.ip);
+  req.session.regenerate((err) => {
+    if (err) return next(err);
+    req.session.isAdmin = true;
+    req.session.adminKeyId = keyId();
+    req.session.cookie.maxAge = config.ADMIN_SESSION_HOURS * 60 * 60 * 1000;
+    logEvent(null, 'Szervezői belépés jelszóval');
     res.redirect(303, '/admin');
   });
 });
@@ -1317,7 +1348,7 @@ app.get('/api/admin/photos/:file', requireAdmin, (req, res) => {
 
 app.get('/admin', (req, res) => {
   res.set('Cache-Control', 'no-store');
-  if (!isAdmin(req)) return res.status(404).type('html').send(adminLoginPage());
+  if (!isAdmin(req)) return res.status(404).type('html').send(adminLoginPage({ enabled: Boolean(config.ADMIN_PASSWORD) }));
   res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 

@@ -161,6 +161,7 @@ module.exports = {
   // Szervezői belépés jelszó nélkül: egy titkos kulcs a szervezői linkben (/admin/<kulcs>).
   // Ha nincs megadva, a szerver első indításkor generál egyet, és a mentés mellé írja (data/admin-key.txt).
   ADMIN_KEY: process.env.ADMIN_KEY || '',
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
   // A szerver gépéről (localhost) az admin felület külön belépés nélkül megnyílik. Kikapcsolás: ADMIN_LOCAL=0
   ADMIN_LOCAL: process.env.ADMIN_LOCAL !== '0',
   // Ennyi ideig marad belépve egy szervezői telefon (óra)

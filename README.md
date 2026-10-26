@@ -119,6 +119,7 @@ npm start
 | `GAME_END_AT` | – | A játék vége, pl. `2026-10-27 22:00`. Utána nem lehet csapatot indítani és válaszolni, a ranglista végleges, a játékosok a „kapu bezárult" képernyőt látják. Fél órával előtte a telefonok figyelmeztetnek |
 | `RESULTS_NOTE` | – | A játék végén, a záróképernyőn és a kivetítőn megjelenő megjegyzés, pl. „Eredményhirdetés 23:00 után!" |
 | `ADMIN_KEY` | generált | A szervezői link titkos kulcsa (16–128 karakter: betű, szám, `-`, `_`). Ha üres, a szerver első induláskor generál egyet, és a `data/admin-key.txt` fájlba menti |
+| `ADMIN_PASSWORD` | – | Szervezői jelszó: a **/admin** cím ezt kéri, ha a telefon még nem lépett be (legalább 8 karakter; soha ne tedd a GitHubra) |
 | `ADMIN_LOCAL` | `1` | A szerver gépéről (`localhost`) az admin felület belépés nélkül megnyílik. `0` = kikapcsolva. `TRUST_PROXY` mellett mindig ki van kapcsolva |
 | `ADMIN_SESSION_HOURS` | `24` | Ennyi óráig marad belépve egy szervezői telefon |
 | `PUBLIC_BOARD` | bekapcsolva | `0` esetén a kivetíthető ranglista ki van kapcsolva |

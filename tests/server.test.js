@@ -348,12 +348,12 @@ describe('cápa-kör', () => {
     }
   });
 
-  test('a piros szakasz (pl. 1 mp) elvéti, és az ütés után újra kell indítani', async () => {
+  test('a piros szakasz (pl. 0,5 mp) elvéti, és az ütés után újra kell indítani', async () => {
     const t = await newTeam();
     await playTo(t.client, 'shark');
     await t.client.post('/api/game/shark/start');
-    const miss = await t.client.post('/api/game/shark/press', { elapsedMs: 1000 });
-    assert.equal(miss.json.correct, false, '1 mp = 80°, a sáv legkorábban 100°-nál kezdődik');
+    const miss = await t.client.post('/api/game/shark/press', { elapsedMs: 500 });
+    assert.equal(miss.json.correct, false, '0,5 mp = 60°, a sáv legkorábban 100°-nál kezdődik');
     const again = await t.client.post('/api/game/shark/press', { elapsedMs: 3000 });
     assert.equal(again.status, 400, 'az ütés után a kör lezárult');
   });
